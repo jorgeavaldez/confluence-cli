@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/pchuri/confluence-cli/compare/v1.18.0...v1.19.0) (2026-02-20)
+
+
+### Features
+
+* add --cql flag to search command for raw CQL queries ([#40](https://github.com/pchuri/confluence-cli/issues/40)) ([311f5a9](https://github.com/pchuri/confluence-cli/commit/311f5a98bfd175c6b7902c55b4dd0687b2a0d8c0)), closes [#39](https://github.com/pchuri/confluence-cli/issues/39)
+
 # [1.18.0](https://github.com/pchuri/confluence-cli/compare/v1.17.0...v1.18.0) (2026-02-15)
 
 
