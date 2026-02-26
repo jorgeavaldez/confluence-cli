@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/pchuri/confluence-cli/compare/v1.19.0...v1.20.0) (2026-02-26)
+
+
+### Features
+
+* add JSON output format to attachments command ([#45](https://github.com/pchuri/confluence-cli/issues/45)) ([b512ffb](https://github.com/pchuri/confluence-cli/commit/b512ffbea6cd083879f5030c10db72cef32302c2)), closes [#44](https://github.com/pchuri/confluence-cli/issues/44)
+
 # [1.19.0](https://github.com/pchuri/confluence-cli/compare/v1.18.0...v1.19.0) (2026-02-20)
 
 
