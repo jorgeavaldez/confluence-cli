@@ -552,30 +552,9 @@ program
         const destDir = path.resolve(options.dest || '.');
         fs.mkdirSync(destDir, { recursive: true });
 
-        const uniquePathFor = (dir, filename) => {
-          const parsed = path.parse(filename);
-          let attempt = path.join(dir, filename);
-          let counter = 1;
-          while (fs.existsSync(attempt)) {
-            const suffix = ` (${counter})`;
-            const nextName = `${parsed.name}${suffix}${parsed.ext}`;
-            attempt = path.join(dir, nextName);
-            counter += 1;
-          }
-          return attempt;
-        };
-
-        const writeStream = (stream, targetPath) => new Promise((resolve, reject) => {
-          const writer = fs.createWriteStream(targetPath);
-          stream.pipe(writer);
-          stream.on('error', reject);
-          writer.on('error', reject);
-          writer.on('finish', resolve);
-        });
-
         const downloadResults = [];
         for (const attachment of filtered) {
-          const targetPath = uniquePathFor(destDir, attachment.title);
+          const targetPath = uniquePathFor(fs, path, destDir, attachment.title);
           const dataStream = await client.downloadAttachment(pageId, attachment);
           await writeStream(dataStream, targetPath);
           downloadResults.push({ title: attachment.title, id: attachment.id, savedTo: targetPath });
@@ -1289,7 +1268,8 @@ program
       }
       fs.mkdirSync(exportDir, { recursive: true });
 
-      const contentFile = options.file || `page.${contentExt}`;
+      const defaultContentFile = `page.${contentExt}`;
+      const contentFile = sanitizeFilename(options.file || defaultContentFile, defaultContentFile);
       const contentPath = path.join(exportDir, contentFile);
       fs.writeFileSync(contentPath, content);
       writeExportMarker(fs, path, exportDir, { pageId, title: pageInfo.title });
@@ -1314,7 +1294,7 @@ program
         if (filtered.length === 0) {
           console.log(chalk.yellow('No attachments to download.'));
         } else {
-          const attachmentsDirName = options.attachmentsDir || 'attachments';
+          const attachmentsDirName = sanitizeTitle(options.attachmentsDir || 'attachments');
           const attachmentsDir = path.join(exportDir, attachmentsDirName);
           fs.mkdirSync(attachmentsDir, { recursive: true });
 
@@ -1357,8 +1337,9 @@ function isExportDirectory(fs, path, dir) {
 }
 
 function uniquePathFor(fs, path, dir, filename) {
-  const parsed = path.parse(filename);
-  let attempt = path.join(dir, filename);
+  const safeFilename = sanitizeFilename(filename);
+  const parsed = path.parse(safeFilename);
+  let attempt = path.join(dir, safeFilename);
   let counter = 1;
   while (fs.existsSync(attempt)) {
     const suffix = ` (${counter})`;
@@ -1560,6 +1541,30 @@ function sanitizeTitle(value) {
   }
   const cleaned = value.replace(/[\\/:*?"<>|]/g, ' ').trim();
   return cleaned || fallback;
+}
+
+function sanitizeFilename(value, fallback = 'attachment') {
+  if (!value || typeof value !== 'string') {
+    return fallback;
+  }
+
+  const baseName = value.split(/[\\/]/).pop();
+  const withoutControlChars = Array.from(baseName || '')
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code >= 32 && code !== 127;
+    })
+    .join('');
+
+  const cleaned = withoutControlChars
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .trim();
+
+  if (!cleaned || cleaned === '.' || cleaned === '..') {
+    return fallback;
+  }
+
+  return cleaned;
 }
 
 function parseLocationOptions(raw) {
