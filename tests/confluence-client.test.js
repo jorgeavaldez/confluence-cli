@@ -1,6 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const axios = require('axios');
 const FormData = require('form-data');
 const ConfluenceClient = require('../lib/confluence-client');
 const MockAdapter = require('axios-mock-adapter');
@@ -715,6 +716,38 @@ describe('ConfluenceClient', () => {
       expect(client.parseNextStart('/rest/api/content/1/child/attachment?start=25')).toBe(25);
       expect(client.parseNextStart('/rest/api/content/1/child/attachment?limit=50')).toBeNull();
       expect(client.parseNextStart(null)).toBeNull();
+    });
+
+    test('downloadAttachment should send auth headers to trusted Confluence URLs', async () => {
+      const spy = jest.spyOn(axios, 'get').mockResolvedValue({ data: Buffer.from('ok') });
+
+      try {
+        await client.downloadAttachment('123', {
+          downloadLink: 'https://test.atlassian.net/download/attachments/123/report.pdf'
+        });
+
+        expect(spy).toHaveBeenCalledTimes(1);
+        const [, requestConfig] = spy.mock.calls[0];
+        expect(requestConfig.headers.Authorization).toBe('Bearer test-token');
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    test('downloadAttachment should not send auth headers to non-Confluence URLs', async () => {
+      const spy = jest.spyOn(axios, 'get').mockResolvedValue({ data: Buffer.from('ok') });
+
+      try {
+        await client.downloadAttachment('123', {
+          downloadLink: 'https://example.com/report.pdf'
+        });
+
+        expect(spy).toHaveBeenCalledTimes(1);
+        const [, requestConfig] = spy.mock.calls[0];
+        expect(requestConfig.headers.Authorization).toBeUndefined();
+      } finally {
+        spy.mockRestore();
+      }
     });
 
     test('uploadAttachment should send multipart request with Atlassian token header', async () => {

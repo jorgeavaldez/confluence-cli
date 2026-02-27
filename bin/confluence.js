@@ -525,8 +525,9 @@ program
         fs.mkdirSync(destDir, { recursive: true });
 
         const uniquePathFor = (dir, filename) => {
-          const parsed = path.parse(filename);
-          let attempt = path.join(dir, filename);
+          const safeFilename = sanitizeFilename(filename);
+          const parsed = path.parse(safeFilename);
+          let attempt = path.join(dir, safeFilename);
           let counter = 1;
           while (fs.existsSync(attempt)) {
             const suffix = ` (${counter})`;
@@ -1237,7 +1238,8 @@ program
       const exportDir = path.join(baseDir, folderName);
       fs.mkdirSync(exportDir, { recursive: true });
 
-      const contentFile = options.file || `page.${contentExt}`;
+      const defaultContentFile = `page.${contentExt}`;
+      const contentFile = sanitizeFilename(options.file || defaultContentFile, defaultContentFile);
       const contentPath = path.join(exportDir, contentFile);
       fs.writeFileSync(contentPath, content);
 
@@ -1261,13 +1263,14 @@ program
         if (filtered.length === 0) {
           console.log(chalk.yellow('No attachments to download.'));
         } else {
-          const attachmentsDirName = options.attachmentsDir || 'attachments';
+          const attachmentsDirName = sanitizeTitle(options.attachmentsDir || 'attachments');
           const attachmentsDir = path.join(exportDir, attachmentsDirName);
           fs.mkdirSync(attachmentsDir, { recursive: true });
 
           const uniquePathFor = (dir, filename) => {
-            const parsed = path.parse(filename);
-            let attempt = path.join(dir, filename);
+            const safeFilename = sanitizeFilename(filename);
+            const parsed = path.parse(safeFilename);
+            let attempt = path.join(dir, safeFilename);
             let counter = 1;
             while (fs.existsSync(attempt)) {
               const suffix = ` (${counter})`;
@@ -1315,6 +1318,30 @@ function sanitizeTitle(value) {
   }
   const cleaned = value.replace(/[\\/:*?"<>|]/g, ' ').trim();
   return cleaned || fallback;
+}
+
+function sanitizeFilename(value, fallback = 'attachment') {
+  if (!value || typeof value !== 'string') {
+    return fallback;
+  }
+
+  const baseName = value.split(/[\\/]/).pop();
+  const withoutControlChars = Array.from(baseName || '')
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code >= 32 && code !== 127;
+    })
+    .join('');
+
+  const cleaned = withoutControlChars
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .trim();
+
+  if (!cleaned || cleaned === '.' || cleaned === '..') {
+    return fallback;
+  }
+
+  return cleaned;
 }
 
 function parseLocationOptions(raw) {
