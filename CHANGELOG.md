@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/pchuri/confluence-cli/compare/v1.20.0...v1.21.0) (2026-02-27)
+
+
+### Features
+
+* add AI skill documentation and install-skill command ([#47](https://github.com/pchuri/confluence-cli/issues/47)) ([487a12e](https://github.com/pchuri/confluence-cli/commit/487a12e4a8ae1b61ece26951f087a8728ced08d3)), closes [#46](https://github.com/pchuri/confluence-cli/issues/46)
+
 # [1.20.0](https://github.com/pchuri/confluence-cli/compare/v1.19.0...v1.20.0) (2026-02-26)
 
 
